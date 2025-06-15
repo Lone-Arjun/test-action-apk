@@ -70,9 +70,16 @@ class BuilderEngineApp {
     }
 
     loadWebView() {
+        if (!navigator.onLine) {
+            this.showOfflinePage();
+            return;
+        }
+        this.showLoadingScreen();
         this.startLoadingTimeout();
-        this.iframe.src = this.targetUrl;
+        
+        this.iframe.src = this.targetUrl + '?_t=' + Date.now(); // add cache buster
     }
+
 
     startLoadingTimeout() {
         // Clear any existing timeout
@@ -151,7 +158,7 @@ class BuilderEngineApp {
     }
 
     handleOffline() {
-        console.log('Device is offline');
+        this.iframe.src = 'about:blank';
         this.showOfflinePage();
     }
 }
