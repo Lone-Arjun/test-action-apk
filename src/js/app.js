@@ -1,6 +1,6 @@
 class BuilderEngineApp {
     constructor() {
-        this.targetUrl = 'https://builderengine.vercel.app';
+        this.targetUrl = 'https://builderengine.vercel.app/login';
         this.iframe = null;
         this.loadingTimeout = null;
         this.init();
