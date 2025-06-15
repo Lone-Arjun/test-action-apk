@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BuilderEngine</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="assets/logo.png">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loading-content">
+            <img src="assets/logo.png" alt="BuilderEngine" class="logo">
+            <h2>BuilderEngine</h2>
+            <div class="loading-spinner"></div>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <!-- Main WebView Container -->
+    <div id="webview-container" style="display: none;">
+        <iframe id="main-iframe" src="https://builderengine.vercel.app" frameborder="0"></iframe>
+    </div>
+
+    <!-- Offline Page -->
+    <div id="offline-page" style="display: none;">
+        <div class="offline-content">
+            <img src="assets/logo.png" alt="BuilderEngine" class="logo">
+            <h2>You're Offline</h2>
+            <p>Please check your internet connection and try again.</p>
+            <button id="retry-btn" class="retry-button">Try Again</button>
+        </div>
+    </div>
+
+    <!-- Error Page -->
+    <div id="error-page" style="display: none;">
+        <div class="error-content">
+            <img src="assets/logo.png" alt="BuilderEngine" class="logo">
+            <h2>Something went wrong</h2>
+            <p>Unable to load BuilderEngine. Please try again.</p>
+            <button id="error-retry-btn" class="retry-button">Retry</button>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
