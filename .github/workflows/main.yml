@@ -52,12 +52,6 @@ jobs:
     - name: Install Capacitor CLI
       run: npm install -g @capacitor/cli
       
-    - name: Initialize Capacitor (if not initialized)
-      run: |
-        if [ ! -f "capacitor.config.json" ]; then
-          npx cap init BuilderEngine com.example.app --web-dir=build
-        fi
-      
     - name: Add Android platform (if not added)
       run: |
         if [ ! -d "android" ]; then
