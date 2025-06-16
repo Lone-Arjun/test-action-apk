@@ -11,6 +11,7 @@
     "platforms": ["android"],
     "android": {
       "package": "com.builderengine.app",
+      "permissions": ["INTERNET"],
       "versionCode": 1
     }
   }
