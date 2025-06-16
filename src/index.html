@@ -9,7 +9,317 @@
 </head>
 <body>
     <!-- Loading Screen -->
-    <div id="loading-screen">
+    <div id="loading-screen"><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BuilderEngine</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+        }
+
+        /* WebView Container */
+        #webview-container {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+
+        #main-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* Offline/Error Pages */
+        .page-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .page-overlay.show {
+            display: flex;
+        }
+
+        .content {
+            text-align: center;
+            padding: 2rem;
+            max-width: 400px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        p {
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+
+        .retry-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .retry-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .retry-button:active {
+            transform: translateY(0);
+        }
+
+        /* Offline specific styling */
+        #offline-page {
+            background: linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%);
+        }
+
+        /* Error specific styling */
+        #error-page {
+            background: linear-gradient(135deg, #fc466b 0%, #3f5efb 100%);
+        }
+
+        /* Hide scrollbars */
+        body::-webkit-scrollbar {
+            display: none;
+        }
+
+        body {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Offline Page -->
+    <div id="offline-page" class="page-overlay">
+        <div class="content">
+            <img src="assets/logo.png" alt="BuilderEngine" class="logo">
+            <h2>You're Offline</h2>
+            <p>Please check your internet connection and try again.</p>
+            <button id="retry-btn" class="retry-button">Try Again</button>
+        </div>
+    </div>
+
+    <!-- Error Page -->
+    <div id="error-page" class="page-overlay">
+        <div class="content">
+            <img src="assets/logo.png" alt="BuilderEngine" class="logo">
+            <h2>Something went wrong</h2>
+            <p>Unable to load BuilderEngine. Please try again.</p>
+            <button id="error-retry-btn" class="retry-button">Retry</button>
+        </div>
+    </div>
+
+    <!-- Main WebView Container -->
+    <div id="webview-container">
+        <iframe id="main-iframe" src="about:blank" frameborder="0"></iframe>
+    </div>
+
+    <script>
+        class BuilderEngineApp {
+            constructor() {
+                this.targetUrl = 'https://builderengine.vercel.app/login';
+                this.iframe = null;
+                this.connectionCheckTimeout = null;
+                this.init();
+            }
+
+            init() {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => {
+                        this.setupElements();
+                        this.setupEventListeners();
+                        this.checkConnectionAndLoad();
+                    });
+                } else {
+                    this.setupElements();
+                    this.setupEventListeners();
+                    this.checkConnectionAndLoad();
+                }
+            }
+
+            setupElements() {
+                this.iframe = document.getElementById('main-iframe');
+                this.webviewContainer = document.getElementById('webview-container');
+                this.offlinePage = document.getElementById('offline-page');
+                this.errorPage = document.getElementById('error-page');
+                this.retryBtn = document.getElementById('retry-btn');
+                this.errorRetryBtn = document.getElementById('error-retry-btn');
+            }
+
+            setupEventListeners() {
+                // Retry buttons
+                this.retryBtn.addEventListener('click', () => this.handleRetry());
+                this.errorRetryBtn.addEventListener('click', () => this.handleRetry());
+
+                // Iframe events
+                this.iframe.addEventListener('load', () => this.handleIframeLoad());
+                this.iframe.addEventListener('error', () => this.handleIframeError());
+
+                // Network status listeners
+                window.addEventListener('online', () => this.handleOnline());
+                window.addEventListener('offline', () => this.handleOffline());
+
+                // Handle page visibility change (for mobile app lifecycle)
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden && navigator.onLine) {
+                        this.refreshIfNeeded();
+                    }
+                });
+            }
+
+            async checkConnectionAndLoad() {
+                if (!navigator.onLine) {
+                    this.showOfflinePage();
+                    return;
+                }
+
+                // Show webview immediately and load iframe
+                this.showWebView();
+                this.loadIframe();
+            }
+
+            loadIframe() {
+                if (!navigator.onLine) {
+                    this.showOfflinePage();
+                    return;
+                }
+
+                // Add cache buster and load the iframe
+                const url = `${this.targetUrl}?_t=${Date.now()}`;
+                this.iframe.src = url;
+
+                // Set a timeout to check if iframe loads successfully
+                this.connectionCheckTimeout = setTimeout(() => {
+                    // If still loading after 10 seconds, might be a connection issue
+                    if (this.iframe.src !== 'about:blank' && !this.iframe.contentDocument) {
+                        this.handleIframeError();
+                    }
+                }, 10000);
+            }
+
+            handleIframeLoad() {
+                if (this.connectionCheckTimeout) {
+                    clearTimeout(this.connectionCheckTimeout);
+                    this.connectionCheckTimeout = null;
+                }
+
+                // Hide any error/offline pages and ensure webview is visible
+                this.hideAllOverlays();
+            }
+
+            handleIframeError() {
+                if (this.connectionCheckTimeout) {
+                    clearTimeout(this.connectionCheckTimeout);
+                    this.connectionCheckTimeout = null;
+                }
+
+                // Check if we're offline
+                if (!navigator.onLine) {
+                    this.showOfflinePage();
+                } else {
+                    this.showErrorPage();
+                }
+            }
+
+            showOfflinePage() {
+                this.iframe.src = 'about:blank';
+                this.hideAllOverlays();
+                this.offlinePage.classList.add('show');
+            }
+
+            showErrorPage() {
+                this.hideAllOverlays();
+                this.errorPage.classList.add('show');
+            }
+
+            showWebView() {
+                this.hideAllOverlays();
+                // Webview container is always visible, just hide overlays
+            }
+
+            hideAllOverlays() {
+                this.offlinePage.classList.remove('show');
+                this.errorPage.classList.remove('show');
+            }
+
+            handleRetry() {
+                this.hideAllOverlays();
+                
+                // Small delay for better UX
+                setTimeout(() => {
+                    this.checkConnectionAndLoad();
+                }, 300);
+            }
+
+            handleOnline() {
+                console.log('Device is online');
+                if (this.offlinePage.classList.contains('show')) {
+                    this.handleRetry();
+                }
+            }
+
+            handleOffline() {
+                console.log('Device is offline');
+                this.showOfflinePage();
+            }
+
+            refreshIfNeeded() {
+                // Refresh iframe if it's showing error or blank page
+                if (this.iframe.src === 'about:blank' || this.errorPage.classList.contains('show')) {
+                    this.handleRetry();
+                }
+            }
+        }
+
+        // Initialize the app
+        new BuilderEngineApp();
+    </script>
+</body>
+</html>
         <div class="loading-content">
             <img src="assets/logo.png" alt="BuilderEngine" class="logo">
             <h2>BuilderEngine</h2>
