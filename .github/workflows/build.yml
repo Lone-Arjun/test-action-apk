@@ -35,6 +35,38 @@ jobs:
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > builderengine-release-key.jks
 
+      - name: ⚙️ Write eas.json and credentials.json
+        run: |
+          cat <<EOF > eas.json
+          {
+            "cli": {
+              "version": ">=3.0.0",
+              "appVersionSource": "local"
+            },
+            "build": {
+              "production": {
+                "android": {
+                  "buildType": "apk",
+                  "credentialsSource": "local"
+                }
+              }
+            }
+          }
+          EOF
+
+          cat <<EOF > credentials.json
+          {
+            "android": {
+              "keystore": {
+                "keystorePath": "./builderengine-release-key.jks",
+                "keystorePassword": "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}",
+                "keyAlias": "${{ secrets.ANDROID_KEYSTORE_ALIAS }}",
+                "keyPassword": "${{ secrets.ANDROID_KEY_PASSWORD }}"
+              }
+            }
+          }
+          EOF
+
       - name: Build Android
         run: eas build --platform android --profile production --non-interactive
         env:
