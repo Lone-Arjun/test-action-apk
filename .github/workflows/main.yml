@@ -52,6 +52,9 @@ jobs:
     - name: Install Capacitor CLI
       run: npm install -g @capacitor/cli
       
+    - name: Install TypeScript
+      run: npm install -D typescript
+      
     # - name: Add Android platform (if not added)
     #   run: |
     #     if [ ! -d "android" ]; then
