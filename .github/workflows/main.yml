@@ -55,11 +55,8 @@ jobs:
     - name: Install TypeScript
       run: npm install -D typescript
       
-    # - name: Add Android platform (if not added)
-    #   run: |
-    #     if [ ! -d "android" ]; then
-    #       npx cap add android
-    #     fi
+    - name: Add Android platform (if not added)
+      run: npx cap add android
       
     - name: Build web assets
       run: npm run build
