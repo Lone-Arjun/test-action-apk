@@ -27,5 +27,5 @@ jobs:
       - name: Build Android
         run: eas build --platform android --non-interactive
         env:
+          EXPO_TOKEN: qnxOqLaBzgzQfnoDpSaaIhrCAkbNJI-AkXUfmoR7
           EAS_ACCESS_TOKEN: qnxOqLaBzgzQfnoDpSaaIhrCAkbNJI-AkXUfmoR7
-          
