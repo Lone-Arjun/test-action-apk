@@ -2,7 +2,7 @@ name: Build Cap APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ new ]
   workflow_dispatch:
 
 jobs:
