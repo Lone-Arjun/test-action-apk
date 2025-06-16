@@ -1,27 +1,20 @@
 {
-  "name": "builderengine",
+  "name": "builderengine-app",
   "version": "1.0.0",
   "description": "BuilderEngine WebView App",
-  "main": "index.js",
+  "main": "src/index.html",
   "scripts": {
-    "build": "echo 'Build complete'",
-    "open:android": "npx cap open android",
-    "open:ios": "npx cap open ios",
-    "sync": "npx cap sync",
-    "add:android": "npx cap add android",
-    "add:ios": "npx cap add ios",
-    "run:android": "npx cap run android",
-    "run:ios": "npx cap run ios"
-  },
-  "dependencies": {
-    "@capacitor/android": "^5.0.0",
-    "@capacitor/core": "^5.0.0",
-    "@capacitor/ios": "^5.0.0"
+    "build": "npx cap sync",
+    "android": "npx cap run android",
+    "ios": "npx cap run ios"
   },
   "devDependencies": {
-    "@capacitor/cli": "^5.0.0",
-    "typescript": "^5.0.0"
+    "@capacitor/cli": "^6.0.0"
   },
-  "author": "Your Name",
-  "license": "MIT"
+  "dependencies": {
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/ios": "^6.0.0",
+    "@capacitor/network": "^6.0.0"
+  }
 }
