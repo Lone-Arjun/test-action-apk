@@ -18,11 +18,14 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install dependencies
-        run: npm install
-
       - name: Install EAS CLI
         run: npm install -g eas-cli
+
+      - name: Install dependencies
+        run: npx expo install
+
+      - name: Debug JavaScript bundle
+        run: npx expo export --dev --output-dir web-dist
 
       - name: Configure EAS Project
         run: |
@@ -66,6 +69,20 @@ jobs:
             }
           }
           EOF
+
+      - name: 👷 Metro Pre-bundle Check
+        run: |
+          npx expo install
+          npx expo doctor || true
+          npx expo prebuild --clean --no-install || true
+
+      - name: 🧪 Prebuild (optional but helps detect JS errors early)
+        run: |
+          npx expo install
+          npx expo doctor
+          npx expo prebuild --clean --no-install || true
+
+
 
       - name: Build Android
         run: eas build --platform android --profile production --non-interactive
