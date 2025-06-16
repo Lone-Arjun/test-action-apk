@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import NetInfo from '@react-native-community/netinfo';
 
@@ -8,7 +8,7 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
-      setIsConnected(state.isConnected);
+      setIsConnected(state.isConnected && state.isInternetReachable);
     });
 
     return () => unsubscribe();
@@ -27,13 +27,22 @@ export default function App() {
     return (
       <View style={styles.centered}>
         <Text style={styles.offlineText}>You're Offline</Text>
-        <Text style={styles.text}>Check your internet connection</Text>
+        <Text style={styles.text}>Please check your internet connection</Text>
       </View>
     );
   }
 
   return (
-    <WebView source={{ uri: 'https://builderengine.vercel.app/login' }} />
+    <WebView
+      source={{ uri: 'https://builderengine.vercel.app/login' }}
+      startInLoadingState={true}
+      renderLoading={() => (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" />
+          <Text style={styles.text}>Loading...</Text>
+        </View>
+      )}
+    />
   );
 }
 
