@@ -4,13 +4,13 @@
     "slug": "builderengine",
     "owner": "qwalid32",
     "version": "1.0.0",
-    "sdkVersion": "50.0.0",
+    "sdkVersion": "53.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "platforms": ["android"],
     "android": {
-      "package": "space.app.builderengine",
+      "package": "com.builderengine.app",
       "versionCode": 1
     }
   }
