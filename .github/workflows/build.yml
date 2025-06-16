@@ -25,7 +25,7 @@ jobs:
         run: npm install -g eas-cli
 
       - name: Build Android
-        run: eas build --platform android --non-interactive
+        run: eas build --platform android --profile production --non-interactive
         env:
           EXPO_TOKEN: qnxOqLaBzgzQfnoDpSaaIhrCAkbNJI-AkXUfmoR7
           EAS_ACCESS_TOKEN: qnxOqLaBzgzQfnoDpSaaIhrCAkbNJI-AkXUfmoR7
