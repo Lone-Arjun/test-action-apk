@@ -4,17 +4,19 @@
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
-    "android": "expo run:android"
+    "android": "expo run:android",
+    "prebuild": "expo prebuild",
+    "build": "eas build"
   },
   "dependencies": {
     "expo": "~53.0.0",
     "react": "18.2.0",
-    "react-native": "0.73.5",
-    "react-native-webview": "13.2.2",
-    "@react-native-community/netinfo": "9.3.7"
+    "react-native": "0.76.5",
+    "react-native-webview": "13.12.2",
+    "@react-native-community/netinfo": "11.4.1"
   },
   "devDependencies": {
-    "expo-cli": "^6.3.6"
+    "@babel/core": "^7.24.0"
   },
   "private": true
 }
