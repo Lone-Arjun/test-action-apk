@@ -1,27 +1,18 @@
 {
-  "name": "builderengine",
+  "name": "builderengine-app",
   "version": "1.0.0",
-  "description": "BuilderEngine WebView App",
-  "main": "index.js",
+  "main": "App.js",
   "scripts": {
-    "build": "echo 'Build complete'",
-    "open:android": "npx cap open android",
-    "open:ios": "npx cap open ios",
-    "sync": "npx cap sync",
-    "add:android": "npx cap add android",
-    "add:ios": "npx cap add ios",
-    "run:android": "npx cap run android",
-    "run:ios": "npx cap run ios"
+    "start": "expo start"
   },
   "dependencies": {
-    "@capacitor/android": "^5.0.0",
-    "@capacitor/core": "^5.0.0",
-    "@capacitor/ios": "^5.0.0"
+    "expo": "~50.0.0",
+    "react": "18.2.0",
+    "react-native": "0.73.0",
+    "react-native-webview": "13.3.2"
   },
   "devDependencies": {
-    "@capacitor/cli": "^5.0.0",
-    "typescript": "^5.0.0"
+    "expo-cli": "^7.0.0"
   },
-  "author": "Your Name",
-  "license": "MIT"
+  "private": true
 }
