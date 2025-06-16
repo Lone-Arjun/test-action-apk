@@ -1,8 +1,10 @@
 {
   "expo": {
     "name": "BuilderEngine",
-    "slug": "builderengine-app",
+    "slug": "builderengine",
+    "owner": "qwalid32",
     "version": "1.0.0",
+    "sdkVersion": "50.0.0"
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
