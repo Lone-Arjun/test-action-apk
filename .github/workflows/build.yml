@@ -31,8 +31,16 @@ jobs:
           EXPO_TOKEN: qnxOqLaBzgzQfnoDpSaaIhrCAkbNJI-AkXUfmoR7
           EAS_ACCESS_TOKEN: qnxOqLaBzgzQfnoDpSaaIhrCAkbNJI-AkXUfmoR7
 
+      - name: Decode Android Keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > builderengine-release-key.jks
+
       - name: Build Android
         run: eas build --platform android --profile production --non-interactive
         env:
           EXPO_TOKEN: qnxOqLaBzgzQfnoDpSaaIhrCAkbNJI-AkXUfmoR7
           EAS_ACCESS_TOKEN: qnxOqLaBzgzQfnoDpSaaIhrCAkbNJI-AkXUfmoR7
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        
