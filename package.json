@@ -9,7 +9,8 @@
     "expo": "~50.0.0",
     "react": "18.2.0",
     "react-native": "0.73.0",
-    "react-native-webview": "13.3.2"
+    "react-native-webview": "13.3.2",
+    "@react-native-community/netinfo": "^11.0.0"
   },
   "devDependencies": {
     "expo-cli": "^7.0.0"
