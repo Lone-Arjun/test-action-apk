@@ -32,7 +32,7 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: 📦 Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: 🔧 Setup EAS project
         run: eas init --non-interactive --force
