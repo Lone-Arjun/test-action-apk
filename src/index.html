@@ -4,17 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BuilderEngine</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="icon" type="image/png" href="assets/logo.png">
-</head>
-<body>
-    <!-- Loading Screen -->
-    <div id="loading-screen"><!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BuilderEngine</title>
     <link rel="icon" type="image/png" href="assets/logo.png">
     <style>
         * {
@@ -28,6 +17,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: #1a1a1a;
             color: white;
+            overflow: hidden;
         }
 
         /* WebView Container */
@@ -113,7 +103,7 @@
 
         /* Offline specific styling */
         #offline-page {
-            background: linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%);
+            background: linear-gradient(135deg, #46078e 0%, #0a0481 100%);
         }
 
         /* Error specific styling */
@@ -121,18 +111,36 @@
             background: linear-gradient(135deg, #fc466b 0%, #3f5efb 100%);
         }
 
-        /* Hide scrollbars */
-        body::-webkit-scrollbar {
-            display: none;
+        /* Connection status indicator */
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 999;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            pointer-events: none;
         }
 
-        body {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+        .connection-status.offline {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            opacity: 1;
+            pointer-events: auto;
         }
     </style>
 </head>
 <body>
+    <!-- Connection Status Indicator -->
+    <div id="connection-status" class="connection-status">
+        <span>Offline</span>
+    </div>
+
     <!-- Offline Page -->
     <div id="offline-page" class="page-overlay">
         <div class="content">
@@ -163,22 +171,27 @@
             constructor() {
                 this.targetUrl = 'https://builderengine.vercel.app/login';
                 this.iframe = null;
-                this.connectionCheckTimeout = null;
+                this.isOnline = true;
+                this.iframeLoadTimeout = null;
+                this.connectionCheckInterval = null;
+                this.retryAttempts = 0;
+                this.maxRetryAttempts = 3;
                 this.init();
             }
 
-            init() {
+            async init() {
                 if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', () => {
-                        this.setupElements();
-                        this.setupEventListeners();
-                        this.checkConnectionAndLoad();
-                    });
+                    document.addEventListener('DOMContentLoaded', () => this.setup());
                 } else {
-                    this.setupElements();
-                    this.setupEventListeners();
-                    this.checkConnectionAndLoad();
+                    this.setup();
                 }
+            }
+
+            setup() {
+                this.setupElements();
+                this.setupEventListeners();
+                this.startConnectionMonitoring();
+                this.checkConnectionAndLoad();
             }
 
             setupElements() {
@@ -188,6 +201,7 @@
                 this.errorPage = document.getElementById('error-page');
                 this.retryBtn = document.getElementById('retry-btn');
                 this.errorRetryBtn = document.getElementById('error-retry-btn');
+                this.connectionStatus = document.getElementById('connection-status');
             }
 
             setupEventListeners() {
@@ -195,70 +209,186 @@
                 this.retryBtn.addEventListener('click', () => this.handleRetry());
                 this.errorRetryBtn.addEventListener('click', () => this.handleRetry());
 
-                // Iframe events
-                this.iframe.addEventListener('load', () => this.handleIframeLoad());
-                this.iframe.addEventListener('error', () => this.handleIframeError());
+                // Network listeners
+                window.addEventListener('online', () => this.handleNetworkChange(true));
+                window.addEventListener('offline', () => this.handleNetworkChange(false));
 
-                // Network status listeners
-                window.addEventListener('online', () => this.handleOnline());
-                window.addEventListener('offline', () => this.handleOffline());
-
-                // Handle page visibility change (for mobile app lifecycle)
+                // Page visibility change
                 document.addEventListener('visibilitychange', () => {
-                    if (!document.hidden && navigator.onLine) {
-                        this.refreshIfNeeded();
+                    if (!document.hidden) {
+                        this.checkConnectionAndLoad();
                     }
                 });
+
+                // Iframe load detection with better error handling
+                this.iframe.addEventListener('load', () => {
+                    // Use setTimeout to allow iframe to fully load
+                    setTimeout(() => this.handleIframeLoad(), 100);
+                });
+
+                this.iframe.addEventListener('error', () => this.handleIframeError());
+            }
+
+            startConnectionMonitoring() {
+                // Check connection every 5 seconds
+                this.connectionCheckInterval = setInterval(() => {
+                    this.checkRealConnection();
+                }, 5000);
+
+                // Initial connection check
+                this.checkRealConnection();
+            }
+
+            async checkRealConnection() {
+                try {
+                    // Try to fetch a small resource to test actual connectivity
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+                    const response = await fetch('https://www.google.com/favicon.ico', {
+                        method: 'HEAD',
+                        mode: 'no-cors',
+                        cache: 'no-cache',
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeoutId);
+                    this.updateConnectionStatus(true);
+                } catch (error) {
+                    this.updateConnectionStatus(false);
+                }
+            }
+
+            updateConnectionStatus(isOnline) {
+                const wasOnline = this.isOnline;
+                this.isOnline = isOnline;
+
+                if (isOnline) {
+                    this.connectionStatus.classList.remove('offline');
+                } else {
+                    this.connectionStatus.classList.add('offline');
+                }
+
+                // If connection status changed, handle it
+                if (wasOnline !== isOnline) {
+                    this.handleNetworkChange(isOnline);
+                }
+            }
+
+            handleNetworkChange(isOnline) {
+                console.log('Network status changed:', isOnline ? 'online' : 'offline');
+                
+                if (isOnline) {
+                    // If we were showing offline page, retry loading
+                    if (this.offlinePage.classList.contains('show')) {
+                        this.handleRetry();
+                    }
+                } else {
+                    // Show offline page immediately
+                    this.showOfflinePage();
+                }
             }
 
             async checkConnectionAndLoad() {
-                if (!navigator.onLine) {
+                // Check if we have internet connectivity
+                if (!this.isOnline || !navigator.onLine) {
                     this.showOfflinePage();
                     return;
                 }
 
-                // Show webview immediately and load iframe
+                // If online, try to load the iframe
                 this.showWebView();
                 this.loadIframe();
             }
 
             loadIframe() {
-                if (!navigator.onLine) {
+                if (!this.isOnline) {
                     this.showOfflinePage();
                     return;
                 }
 
+                // Clear any existing timeout
+                if (this.iframeLoadTimeout) {
+                    clearTimeout(this.iframeLoadTimeout);
+                }
+
                 // Add cache buster and load the iframe
-                const url = `${this.targetUrl}?_t=${Date.now()}`;
+                const url = `${this.targetUrl}?_t=${Date.now()}&retry=${this.retryAttempts}`;
+                console.log('Loading iframe:', url);
                 this.iframe.src = url;
 
-                // Set a timeout to check if iframe loads successfully
-                this.connectionCheckTimeout = setTimeout(() => {
-                    // If still loading after 10 seconds, might be a connection issue
-                    if (this.iframe.src !== 'about:blank' && !this.iframe.contentDocument) {
-                        this.handleIframeError();
-                    }
-                }, 10000);
+                // Set a timeout to detect load failures
+                this.iframeLoadTimeout = setTimeout(() => {
+                    console.log('Iframe load timeout');
+                    this.handleLoadTimeout();
+                }, 10000); // 10 second timeout
             }
 
             handleIframeLoad() {
-                if (this.connectionCheckTimeout) {
-                    clearTimeout(this.connectionCheckTimeout);
-                    this.connectionCheckTimeout = null;
+                console.log('Iframe load event triggered');
+                
+                if (this.iframeLoadTimeout) {
+                    clearTimeout(this.iframeLoadTimeout);
+                    this.iframeLoadTimeout = null;
                 }
 
-                // Hide any error/offline pages and ensure webview is visible
+                // Check if iframe actually loaded content
+                try {
+                    const iframeSrc = this.iframe.src;
+                    
+                    // If iframe src is about:blank or empty, it didn't load properly
+                    if (!iframeSrc || iframeSrc === 'about:blank') {
+                        console.log('Iframe src is blank, treating as error');
+                        this.handleIframeError();
+                        return;
+                    }
+
+                    // Check if we can detect the iframe content
+                    const iframeWindow = this.iframe.contentWindow;
+                    if (!iframeWindow) {
+                        console.log('No iframe window, treating as error');
+                        this.handleIframeError();
+                        return;
+                    }
+
+                } catch (e) {
+                    // Cross-origin restriction is expected, treat as successful load
+                    console.log('Cross-origin iframe detected - assuming successful load');
+                }
+
+                console.log('Iframe loaded successfully');
+                this.retryAttempts = 0; // Reset retry attempts on successful load
                 this.hideAllOverlays();
             }
 
+            handleLoadTimeout() {
+                console.log('Load timeout - checking connection and showing appropriate page');
+                
+                if (!this.isOnline || !navigator.onLine) {
+                    this.showOfflinePage();
+                } else {
+                    this.retryAttempts++;
+                    if (this.retryAttempts >= this.maxRetryAttempts) {
+                        this.showErrorPage();
+                    } else {
+                        // Auto-retry with exponential backoff
+                        setTimeout(() => {
+                            this.loadIframe();
+                        }, 2000 * this.retryAttempts);
+                    }
+                }
+            }
+
             handleIframeError() {
-                if (this.connectionCheckTimeout) {
-                    clearTimeout(this.connectionCheckTimeout);
-                    this.connectionCheckTimeout = null;
+                console.log('Iframe error detected');
+                
+                if (this.iframeLoadTimeout) {
+                    clearTimeout(this.iframeLoadTimeout);
+                    this.iframeLoadTimeout = null;
                 }
 
-                // Check if we're offline
-                if (!navigator.onLine) {
+                // Check network status first
+                if (!this.isOnline || !navigator.onLine) {
                     this.showOfflinePage();
                 } else {
                     this.showErrorPage();
@@ -266,19 +396,21 @@
             }
 
             showOfflinePage() {
+                console.log('Showing offline page');
                 this.iframe.src = 'about:blank';
                 this.hideAllOverlays();
                 this.offlinePage.classList.add('show');
             }
 
             showErrorPage() {
+                console.log('Showing error page');
                 this.hideAllOverlays();
                 this.errorPage.classList.add('show');
             }
 
             showWebView() {
+                console.log('Showing webview');
                 this.hideAllOverlays();
-                // Webview container is always visible, just hide overlays
             }
 
             hideAllOverlays() {
@@ -287,72 +419,21 @@
             }
 
             handleRetry() {
+                console.log('Retrying connection...');
+                this.retryAttempts = 0; // Reset retry attempts
                 this.hideAllOverlays();
                 
-                // Small delay for better UX
+                // Force a connection check before retrying
+                this.checkRealConnection();
+                
                 setTimeout(() => {
                     this.checkConnectionAndLoad();
-                }, 300);
-            }
-
-            handleOnline() {
-                console.log('Device is online');
-                if (this.offlinePage.classList.contains('show')) {
-                    this.handleRetry();
-                }
-            }
-
-            handleOffline() {
-                console.log('Device is offline');
-                this.showOfflinePage();
-            }
-
-            refreshIfNeeded() {
-                // Refresh iframe if it's showing error or blank page
-                if (this.iframe.src === 'about:blank' || this.errorPage.classList.contains('show')) {
-                    this.handleRetry();
-                }
+                }, 1000);
             }
         }
 
         // Initialize the app
-        new BuilderEngineApp();
+        window.app = new BuilderEngineApp();
     </script>
-</body>
-</html>
-        <div class="loading-content">
-            <img src="assets/logo.png" alt="BuilderEngine" class="logo">
-            <h2>BuilderEngine</h2>
-            <div class="loading-spinner"></div>
-            <p>Loading...</p>
-        </div>
-    </div>
-
-    <!-- Offline Page -->
-    <div id="offline-page" style="display: none;">
-        <div class="offline-content">
-            <img src="assets/logo.png" alt="BuilderEngine" class="logo">
-            <h2>You're Offline</h2>
-            <p>Please check your internet connection and try again.</p>
-            <button id="retry-btn" class="retry-button">Try Again</button>
-        </div>
-    </div>
-
-    <!-- Main WebView Container -->
-    <div id="webview-container" style="display: none;">
-        <iframe id="main-iframe" src="https://builderengine.vercel.app" frameborder="0"></iframe>
-    </div>
-
-    <!-- Error Page -->
-    <div id="error-page" style="display: none;">
-        <div class="error-content">
-            <img src="assets/logo.png" alt="BuilderEngine" class="logo">
-            <h2>Something went wrong</h2>
-            <p>Unable to load BuilderEngine. Please try again.</p>
-            <button id="error-retry-btn" class="retry-button">Retry</button>
-        </div>
-    </div>
-
-    <script src="js/app.js"></script>
 </body>
 </html>
