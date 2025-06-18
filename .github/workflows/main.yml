@@ -1,81 +1,39 @@
-name: Build Cap APK
+name: Build APK From ZIP
 
 on:
   push:
-    branches: [ new ]
+    branches: [zip]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Unzip Android Project
+      run: |
+        unzip android-project.zip -d android
+
+    - name: Set up JDK
+      uses: actions/setup-java@v3
       with:
-        node-version: '20'
-        cache: 'npm'
-        
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-        
-    - name: Setup Android SDK
+        distribution: temurin
+        java-version: 17
+
+    - name: Set up Android SDK
       uses: android-actions/setup-android@v3
-      
-    - name: Cache Gradle dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
-      
-    - name: Cache Node modules
-      uses: actions/cache@v4
-      with:
-        path: ~/.npm
-        key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
-      
-    - name: Install Node dependencies
-      run: npm install
-      
-    - name: Install Capacitor CLI
-      run: npm install -g @capacitor/cli
-      
-    - name: Install TypeScript
-      run: npm install -D typescript
-      
-    - name: Add Android platform (if not added)
-      run: npx cap add android
-      
-    - name: Build web assets
-      run: npm run build
-      if: hashFiles('package.json') != ''
-      
-    - name: Sync Capacitor
-      run: npx cap sync android
-      
-    - name: Make gradlew executable
-      run: chmod +x android/gradlew
-      
-    - name: Build Debug APK
+
+    - name: Build APK
       run: |
         cd android
-        ./gradlew assembleDebug --no-daemon --stacktrace --max-workers=2
-      
+        chmod +x ./gradlew
+        ./gradlew assembleRelease
+
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: BuilderEngine-Debug-APK
-        path: android/app/build/outputs/apk/debug/app-debug.apk
-        retention-days: 30
+        name: app-release.apk
+        path: android/app/build/outputs/apk/release/app-release.apk
