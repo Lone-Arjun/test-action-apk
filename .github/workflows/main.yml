@@ -17,6 +17,11 @@ jobs:
       run: |
         unzip android-project.zip -d android
 
+    - name: Inject Gradle Wrapper
+      run: |
+        cd android
+        gradle wrapper # generates gradlew & gradle/ folder
+
     - name: Set up JDK
       uses: actions/setup-java@v3
       with:
